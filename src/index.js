@@ -16,23 +16,30 @@ import * as Help from "./commands/help.js";
 import * as Check from "./commands/check.js";
 import * as Debug from "./commands/debug.js";
 import * as Syntax from "./commands/syntax.js";
-import * as Format from "./commands/format.js"; // ✅ NEW
+import * as Format from "./commands/format.js";
+import * as Company from "./commands/company.js";
 
 import http from "http";
 
-// ✅ HTTP server to satisfy Render's port check
+// ✅ Keep Render service alive
 const PORT = process.env.PORT || 5173;
 const app = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("AkiBot is alive!\n");
 });
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// ✅ Register all slash commands in one place
-const commands = [Help.data, Check.data, Debug.data, Syntax.data, Format.data];
+// ✅ Register all slash commands
+const commands = [
+  Help.data,
+  Check.data,
+  Debug.data,
+  Syntax.data,
+  Format.data,
+  Company.data
+];
 
 // Create Discord client
 const client = new Client({
@@ -44,7 +51,7 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-// Register slash commands
+// Register slash commands with Discord API
 async function registerCommands() {
   try {
     const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -59,14 +66,14 @@ async function registerCommands() {
   }
 }
 
-// When bot is ready
+// Bot ready
 client.once(Events.ClientReady, (c) => {
   console.log(`🤖 Logged in as ${c.user.tag}`);
   startContestWatcher(client);
   startYouTubeWatcher(client);
 });
 
-// Handle slash commands dynamically
+// Slash command handler
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -76,7 +83,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       [Check.data.name]: Check,
       [Debug.data.name]: Debug,
       [Syntax.data.name]: Syntax,
-      [Format.data.name]: Format
+      [Format.data.name]: Format,
+      [Company.data.name]: Company // ✅ Added company here
     };
 
     const command = cmdMap[interaction.commandName];
