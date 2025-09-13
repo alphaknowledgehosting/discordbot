@@ -15,8 +15,8 @@ export async function execute(interaction) {
       "/check [lang] [code] — Check/fix code (java|c|cpp|python)\n" +
       "/debug [lang] [issue] [code] — Debug with steps\n" +
       "/syntax [lang] [code] — Check only syntax errors\n" +
-      "/format [code] — Auto-format & organize code"+
-      "/company [code] — Automatically gives company related questions"
+      "/format [code] — Auto-format & organize code\n" + // ✅ Added \n
+      "/company [name] — Get company-related question CSVs"
     );
   } catch (err) {
     console.error("Help command failed:", err);
