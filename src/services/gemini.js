@@ -3,17 +3,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-/**
- * 🔹 Safe JSON parser with fallback
- */
 function safeParseJSON(text, fallback) {
   try {
     return JSON.parse(text);
   } catch {
-    const jsonMatch = text.match(/```json\n([\s\S]*?)```/i);
-    if (jsonMatch) {
+    const match = text.match(/```json\n([\s\S]*?)```/i);
+    if (match) {
       try {
-        return JSON.parse(jsonMatch[1]);
+        return JSON.parse(match[1]);
       } catch {}
     }
     return fallback;
@@ -21,44 +18,52 @@ function safeParseJSON(text, fallback) {
 }
 
 /**
- * ✅ Code checker & fixer with optimization
+ * ✅ Code checker & fixer
  */
 export async function llmCheckAndFix(code, lang) {
   const prompt = `
 You are AkiBot, a precise programming assistant.
-Analyze the following ${lang} code carefully. 
-Return ONLY valid JSON with these fields:
-"errors": an array of objects with "line" and "message" about problems,
-"fixed_code": corrected version (formatted properly),
-"optimized_code": cleaner, more efficient version.
-
-User code:
+Analyze this ${lang} code and return ONLY JSON:
+"errors": list of issues with "line" + "message",
+"fixed_code": corrected version,
+"optimized_code": optimized version.
 \`\`\`${lang}
 ${code}
 \`\`\`
-`.trim();
+  `.trim();
 
   const res = await model.generateContent(prompt);
   const text = res.response.text().trim();
 
-  // Try parsing as JSON
-  const parsed = safeParseJSON(text, null);
-  if (parsed) return parsed;
+  return safeParseJSON(text, {
+    errors: ["Failed to parse JSON output."],
+    fixed_code: code,
+    optimized_code: code
+  });
+}
 
-  // 🔹 Fallback extraction if JSON fails
-  const fixedMatch = text.match(/Fixed Code:```[\s\S]*?```/i);
-  const optimizedMatch = text.match(/Optimized Code:```[\s\S]*?```/i);
-  const errorsMatch = text.match(/Errors?:([\s\S]*?)(?=Fixed|Optimized|$)/i);
+/**
+ * ✅ Debugger
+ */
+export async function llmDebug(issue, code, lang) {
+  const prompt = `
+You are AkiBot, a debugging assistant.
+Analyze the issue in ${lang} code and return ONLY JSON:
+"root_cause": why the bug happens,
+"steps": how to fix it step-by-step,
+"fixed_code": corrected version.
+Issue: ${issue}
+\`\`\`${lang}
+${code}
+\`\`\`
+  `.trim();
 
-  return {
-    errors: errorsMatch
-      ? errorsMatch[1].trim().split("\n").map(e => e.trim()).filter(Boolean)
-      : ["Could not extract errors. Raw output returned."],
-    fixed_code: fixedMatch
-      ? fixedMatch[0].replace(/.*```[\w]*\n?|```$/g, "").trim()
-      : code,
-    optimized_code: optimizedMatch
-      ? optimizedMatch[0].replace(/.*```[\w]*\n?|```$/g, "").trim()
-      : code
-  };
+  const res = await model.generateContent(prompt);
+  const text = res.response.text().trim();
+
+  return safeParseJSON(text, {
+    root_cause: "Failed to parse JSON output.",
+    steps: "No steps available.",
+    fixed_code: code
+  });
 }
