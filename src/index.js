@@ -11,6 +11,7 @@ import {
 import { shouldDelete } from "./services/moderation.js";
 import { startContestWatcher } from "./services/contests.js";
 import { startYouTubeWatcher } from "./services/youtube.js";
+import * as ListCompanies from "./commands/listcompanies.js";
 
 import * as Help from "./commands/help.js";
 import * as Check from "./commands/check.js";
@@ -38,7 +39,7 @@ const commands = [
   Debug.data,
   Syntax.data,
   Format.data,
-  Company.data
+  Company.data,ListCompanies.data
 ];
 
 // Create Discord client
@@ -89,7 +90,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       [Debug.data.name]: Debug,
       [Syntax.data.name]: Syntax,
       [Format.data.name]: Format,
-      [Company.data.name]: Company
+      [Company.data.name]: Company,
+      [ListCompanies.data.name]: ListCompanies
     };
 
     const command = cmdMap[interaction.commandName];

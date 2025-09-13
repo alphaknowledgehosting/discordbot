@@ -11,9 +11,10 @@ export async function execute(interaction) {
     // ✅ Step 2: Edit reply safely
     await interaction.editReply(
       "**AkiBot — Commands**\n" +
-      "/help — This message\n" +
+      "/help — Show all commands\n" +
       "/check [lang] [code] — Check/fix code (java|c|cpp|python)\n" +
-      "/company [name] — Get company-related question CSVs"
+      "/company [name] — Get company-related question CSVs"+
+      "/listcompanies — Show available companies from CSV files"
     );
   } catch (err) {
     console.error("Help command failed:", err);
