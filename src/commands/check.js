@@ -13,7 +13,7 @@ export async function execute(interaction) {
   const lang = interaction.options.getString("lang");
   const code = interaction.options.getString("code");
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 }); // ✅ ephemeral replacement
   try {
     const result = await llmCheckAndFix(code, lang);
     await interaction.editReply(

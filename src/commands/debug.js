@@ -15,12 +15,12 @@ export async function execute(interaction) {
   const issue = interaction.options.getString("issue");
   const code = interaction.options.getString("code");
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 }); // ✅ ephemeral replacement
   try {
     const result = await llmDebug(issue, code, lang);
     await interaction.editReply(
-      `**Root cause:** ${result.root_cause}\n` +
-      `**Steps:**\n${result.steps}\n` +
+      `**Root cause:** ${result.root_cause}\n\n` +
+      `**Steps:**\n${result.steps}\n\n` +
       "```" + lang + "\n" + result.fixed_code + "\n```"
     );
   } catch (e) {
