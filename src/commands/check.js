@@ -13,42 +13,15 @@ export async function execute(interaction) {
   const lang = interaction.options.getString("lang");
   const code = interaction.options.getString("code");
 
-  await interaction.deferReply({ flags: 64 }); // private reply
+  await interaction.deferReply({ flags: 64 }); // reply hidden to user only
   try {
     const result = await llmCheckAndFix(code, lang);
 
-    await interaction.editReply({
-      content: "🎯 **Code Check Result**",
-      embeds: [
-        {
-          color: 0x5865F2,
-          title: "📝 Original Code",
-          description: `\`\`\`${lang}\n${code}\n\`\`\``
-        },
-        {
-          color: 0xED4245,
-          title: "❌ Errors",
-          description: Array.isArray(result.errors)
-            ? result.errors.map(e => `Line ${e.line || "?"}: ${e.description}`).join("\n")
-            : result.errors
-        },
-        {
-          color: 0x57F287,
-          title: "🔧 Fixed Code",
-          description: `\`\`\`${lang}\n${result.fixed_code}\n\`\`\``
-        },
-        {
-          color: 0xF47FFF,
-          title: "⚡ Optimized Code",
-          description: `\`\`\`${lang}\n${result.optimized_code}\n\`\`\``
-        },
-        {
-          color: 0xFEE75C,
-          title: "📊 Stats",
-          description: `Original: ${code.length} chars\nFixed: ${result.fixed_code.length} chars\nOptimized: ${result.optimized_code.length} chars`
-        }
-      ]
-    });
+    await interaction.editReply(
+      `🎯 **Code Check Result**\n\n` +
+      `📝 **Original Code:**\n\`\`\`${lang}\n${code}\n\`\`\`\n\n` +
+      `${result}`
+    );
   } catch (e) {
     await interaction.editReply(`⚠️ Sorry, I couldn't analyze the code: ${e.message}`);
   }

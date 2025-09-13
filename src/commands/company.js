@@ -8,7 +8,7 @@ export const data = {
     {
       name: "name",
       type: 3,
-      description: "Company name (e.g., square, amazon)",
+      description: "Company name (e.g., amazon, google, tesla, ibm)",
       required: true
     }
   ]
@@ -16,21 +16,22 @@ export const data = {
 
 export async function execute(interaction) {
   const companyName = interaction.options.getString("name").toLowerCase();
-  const folderPath = path.resolve("data"); // your CSV storage folder
+  const folderPath = path.resolve("./data"); // ✅ relative to project root
 
-  // Find all files for that company
   let files = [];
   try {
-    files = fs.readdirSync(folderPath)
-      .filter(f => f.toLowerCase().startsWith(companyName) && f.endsWith(".csv"));
+    files = fs.readdirSync(folderPath).filter(
+      (f) =>
+        f.toLowerCase().startsWith(companyName) && f.toLowerCase().endsWith(".csv")
+    );
   } catch (err) {
-    console.error(err);
+    console.error("File read error:", err);
   }
 
   if (files.length === 0) {
     return interaction.reply({
       content: `❌ No files found for **${companyName}**.`,
-      flags: 64 // ephemeral (only visible to user)
+      flags: 64 // private reply
     });
   }
 
@@ -40,7 +41,7 @@ export async function execute(interaction) {
     flags: 64
   });
 
-  // Send files via DM
+  // Send CSVs in DM
   try {
     for (const file of files) {
       const filePath = path.join(folderPath, file);

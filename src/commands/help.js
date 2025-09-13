@@ -13,9 +13,6 @@ export async function execute(interaction) {
       "**AkiBot — Commands**\n" +
       "/help — This message\n" +
       "/check [lang] [code] — Check/fix code (java|c|cpp|python)\n" +
-      "/debug [lang] [issue] [code] — Debug with steps\n" +
-      "/syntax [lang] [code] — Check only syntax errors\n" +
-      "/format [code] — Auto-format & organize code\n" + // ✅ Added \n
       "/company [name] — Get company-related question CSVs"
     );
   } catch (err) {
