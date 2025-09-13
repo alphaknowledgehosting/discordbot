@@ -17,6 +17,8 @@ import * as Check from "./commands/check.js";
 import * as Debug from "./commands/debug.js";
 
 import http from "http";
+import * as Syntax from "./commands/syntax.js";
+
 
 // ✅ HTTP server to satisfy Render's port check
 const PORT = process.env.PORT || 5173;
@@ -30,7 +32,7 @@ app.listen(PORT, () => {
 });
 
 // Slash commands to register
-const commands = [Help.data, Check.data, Debug.data];
+const commands = [Help.data, Check.data, Debug.data,Syntax.data];
 
 // Create Discord client
 const client = new Client({
