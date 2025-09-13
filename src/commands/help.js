@@ -4,13 +4,23 @@ export const data = {
 };
 
 export async function execute(interaction) {
-  await interaction.reply({
-    ephemeral: true,
-    content:
-`**AkiBot — Commands**
-/help — This message
-/check [lang] [code] — Check/fix code (java|c|cpp|python)
-/debug [lang] [issue] [code] — Debug with steps
-`
-  });
+  try {
+    // ✅ Step 1: Defer reply immediately
+    await interaction.deferReply({ flags: 64 });
+
+    // ✅ Step 2: Edit reply safely
+    await interaction.editReply(
+      "**AkiBot — Commands**\n" +
+      "/help — This message\n" +
+      "/check [lang] [code] — Check/fix code (java|c|cpp|python)\n" +
+      "/debug [lang] [issue] [code] — Debug with steps\n" +
+      "/syntax [lang] [code] — Check only syntax errors\n" +
+      "/format [code] — Auto-format & organize code"
+    );
+  } catch (err) {
+    console.error("Help command failed:", err);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply("⚠️ Something went wrong while showing help.");
+    }
+  }
 }
