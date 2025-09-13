@@ -4,128 +4,61 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 /**
+ * 🔹 Safe JSON parser with fallback
+ */
+function safeParseJSON(text, fallback) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const jsonMatch = text.match(/```json\n([\s\S]*?)```/i);
+    if (jsonMatch) {
+      try {
+        return JSON.parse(jsonMatch[1]);
+      } catch {}
+    }
+    return fallback;
+  }
+}
+
+/**
  * ✅ Code checker & fixer with optimization
- * Returns structured plain text with:
- * - Errors
- * - Fixed Code
- * - Optimized Code
  */
 export async function llmCheckAndFix(code, lang) {
   const prompt = `
 You are AkiBot, a precise programming assistant.
-Analyze the following ${lang} code.
-Return your answer ONLY in this format (do not output JSON):
-
-Errors:
-- <error 1>
-- <error 2>
-- <error 3>
-
-Fixed Code:
-\`\`\`${lang}
-<fixed version here>
-\`\`\`
-
-Optimized Code:
-\`\`\`${lang}
-<optimized version here>
-\`\`\`
+Analyze the following ${lang} code carefully. 
+Return ONLY valid JSON with these fields:
+"errors": an array of objects with "line" and "message" about problems,
+"fixed_code": corrected version (formatted properly),
+"optimized_code": cleaner, more efficient version.
 
 User code:
 \`\`\`${lang}
 ${code}
 \`\`\`
-  `.trim();
+`.trim();
 
   const res = await model.generateContent(prompt);
-  return res.response.text().trim();
-}
+  const text = res.response.text().trim();
 
-/**
- * ✅ Debugger
- * Explains root cause, steps, and gives fixed code
- */
-export async function llmDebug(issue, code, lang) {
-  const prompt = `
-You are AkiBot, a debugging assistant.
-Analyze the reported issue in the ${lang} code.
-Return your answer ONLY in this format (do not output JSON):
+  // Try parsing as JSON
+  const parsed = safeParseJSON(text, null);
+  if (parsed) return parsed;
 
-Root Cause:
-<why the bug happens>
+  // 🔹 Fallback extraction if JSON fails
+  const fixedMatch = text.match(/Fixed Code:```[\s\S]*?```/i);
+  const optimizedMatch = text.match(/Optimized Code:```[\s\S]*?```/i);
+  const errorsMatch = text.match(/Errors?:([\s\S]*?)(?=Fixed|Optimized|$)/i);
 
-Steps to Fix:
-- <step 1>
-- <step 2>
-
-Fixed Code:
-\`\`\`${lang}
-<fixed version here>
-\`\`\`
-
-Issue:
-${issue}
-
-User code:
-\`\`\`${lang}
-${code}
-\`\`\`
-  `.trim();
-
-  const res = await model.generateContent(prompt);
-  return res.response.text().trim();
-}
-
-/**
- * ✅ Syntax checker only
- * Returns plain text with syntax errors or "No syntax errors found"
- */
-export async function llmSyntaxCheck(code, lang) {
-  const prompt = `
-You are AkiBot, a strict syntax checker.
-Analyze the following ${lang} code for SYNTAX ERRORS only.
-Do NOT fix or optimize the code.
-Return your answer ONLY in this format (do not output JSON):
-
-Syntax Check Result:
-- If there are errors, list them like:
-  - Line X: <error message>
-- If there are no errors, say:
-  ✅ No syntax errors found
-
-User code:
-\`\`\`${lang}
-${code}
-\`\`\`
-  `.trim();
-
-  const res = await model.generateContent(prompt);
-  return res.response.text().trim();
-}
-
-/**
- * ✅ Code formatter
- * Auto-detects language & returns neatly formatted version
- */
-export async function llmFormatCode(code) {
-  const prompt = `
-You are AkiBot, a professional code formatter.
-Auto-detect the language of the given code and reformat it properly with indentation and spacing.
-Return your answer ONLY in this format (do not output JSON):
-
-Detected Language: <language>
-
-Formatted Code:
-\`\`\`
-<formatted version here>
-\`\`\`
-
-User code:
-\`\`\`
-${code}
-\`\`\`
-  `.trim();
-
-  const res = await model.generateContent(prompt);
-  return res.response.text().trim();
+  return {
+    errors: errorsMatch
+      ? errorsMatch[1].trim().split("\n").map(e => e.trim()).filter(Boolean)
+      : ["Could not extract errors. Raw output returned."],
+    fixed_code: fixedMatch
+      ? fixedMatch[0].replace(/.*```[\w]*\n?|```$/g, "").trim()
+      : code,
+    optimized_code: optimizedMatch
+      ? optimizedMatch[0].replace(/.*```[\w]*\n?|```$/g, "").trim()
+      : code
+  };
 }
