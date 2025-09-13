@@ -18,18 +18,22 @@ import * as Debug from "./commands/debug.js";
 
 import http from "http";
 
-// Dummy HTTP server to keep Render Web Service healthy
-const port = process.env.PORT || 5173;
-http.createServer((req, res) => {
+// ✅ Create an HTTP server (to satisfy Render Web Service port checks)
+const PORT = process.env.PORT || 5173;
+const app = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("AkiBot is alive!\n");
-}).listen(port, () => {
-  console.log(`🌐 Dummy server listening on port ${port}`);
+});
+
+// ✅ Express-style listen log
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
 // Slash commands to register
 const commands = [Help.data, Check.data, Debug.data];
 
+// Discord client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -44,19 +48,9 @@ async function registerCommands() {
   try {
     const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-    // Global commands (slower to propagate)
     await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID), {
       body: commands
     });
-
-    // For faster dev testing (guild-only), uncomment:
-    // await rest.put(
-    //   Routes.applicationGuildCommands(
-    //     process.env.DISCORD_CLIENT_ID,
-    //     process.env.DISCORD_GUILD_ID
-    //   ),
-    //   { body: commands }
-    // );
 
     console.log("✅ Slash commands registered.");
   } catch (err) {
@@ -64,14 +58,14 @@ async function registerCommands() {
   }
 }
 
-// Bot ready
+// Bot ready event
 client.once(Events.ClientReady, (c) => {
   console.log(`🤖 Logged in as ${c.user.tag}`);
   startContestWatcher(client);
   startYouTubeWatcher(client);
 });
 
-// Handle slash commands
+// Slash command handler
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
