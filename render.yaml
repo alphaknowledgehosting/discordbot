@@ -1,0 +1,21 @@
+services:
+  - type: worker
+    name: akibot
+    env: node
+    plan: starter
+    region: frankfurt    # or nearest
+    buildCommand: "npm ci"
+    startCommand: "npm start"
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: YOUTUBE_CHANNEL_ID
+        sync: false
+      - key: NOTIFY_CHANNEL_ID
+        sync: false
