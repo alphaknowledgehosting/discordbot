@@ -29,11 +29,11 @@ ${code}
   try {
     return JSON.parse(text);
   } catch {
-    const codeMatch = text.match(/```[\\s\\S]*?```/);
+    const codeMatch = text.match(/```[\s\S]*?```/);
     return {
       errors: "Could not parse structured JSON (fallback mode).",
       fixed_code: codeMatch
-        ? codeMatch[0].replace(/```[\\w]*\\n?|\\n?```/g, "")
+        ? codeMatch[0].replace(/```[\w]*\n?|\n?```/g, "")
         : code,
       optimized_code: code
     };
@@ -68,12 +68,12 @@ ${code}
   try {
     return JSON.parse(text);
   } catch {
-    const codeMatch = text.match(/```[\\s\\S]*?```/);
+    const codeMatch = text.match(/```[\s\S]*?```/);
     return {
       root_cause: "Could not parse structured JSON (fallback mode).",
       steps: text,
       fixed_code: codeMatch
-        ? codeMatch[0].replace(/```[\\w]*\\n?|\\n?```/g, "")
+        ? codeMatch[0].replace(/```[\w]*\n?|\n?```/g, "")
         : code
     };
   }
@@ -108,6 +108,39 @@ ${code}
     return {
       syntax_ok: false,
       errors: [`Failed to parse LLM response. Raw output: ${text}`]
+    };
+  }
+}
+
+/**
+ * ✅ Code formatter
+ * Auto-detects language & returns formatted version
+ */
+export async function llmFormatCode(code) {
+  const prompt = `
+You are AkiBot, a professional code formatter.
+Auto-detect the language of the given code and reformat it properly with indentation and spacing.
+Return JSON with fields:
+"detected_lang": the detected programming language,
+"formatted_code": the neatly formatted version.
+User code:
+\`\`\`
+${code}
+\`\`\`
+  `.trim();
+
+  const res = await model.generateContent(prompt);
+  const text = res.response.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    const codeMatch = text.match(/```[\s\S]*?```/);
+    return {
+      detected_lang: "unknown",
+      formatted_code: codeMatch
+        ? codeMatch[0].replace(/```[\w]*\n?|\n?```/g, "")
+        : code
     };
   }
 }

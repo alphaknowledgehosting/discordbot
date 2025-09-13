@@ -15,10 +15,10 @@ import { startYouTubeWatcher } from "./services/youtube.js";
 import * as Help from "./commands/help.js";
 import * as Check from "./commands/check.js";
 import * as Debug from "./commands/debug.js";
+import * as Syntax from "./commands/syntax.js";
+import * as Format from "./commands/format.js"; // ✅ NEW
 
 import http from "http";
-import * as Syntax from "./commands/syntax.js";
-
 
 // ✅ HTTP server to satisfy Render's port check
 const PORT = process.env.PORT || 5173;
@@ -31,8 +31,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// Slash commands to register
-const commands = [Help.data, Check.data, Debug.data,Syntax.data];
+// ✅ Register all slash commands in one place
+const commands = [Help.data, Check.data, Debug.data, Syntax.data, Format.data];
 
 // Create Discord client
 const client = new Client({
@@ -66,20 +66,27 @@ client.once(Events.ClientReady, (c) => {
   startYouTubeWatcher(client);
 });
 
-// Handle slash commands
+// Handle slash commands dynamically
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   try {
-    if (interaction.commandName === Help.data.name) return Help.execute(interaction);
-    if (interaction.commandName === Check.data.name) return Check.execute(interaction);
-    if (interaction.commandName === Debug.data.name) return Debug.execute(interaction);
+    const cmdMap = {
+      [Help.data.name]: Help,
+      [Check.data.name]: Check,
+      [Debug.data.name]: Debug,
+      [Syntax.data.name]: Syntax,
+      [Format.data.name]: Format
+    };
+
+    const command = cmdMap[interaction.commandName];
+    if (command) return command.execute(interaction);
+
   } catch (err) {
     console.error("Command error:", err);
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply("⚠️ Something went wrong while executing this command.");
     } else {
-      // Use flags instead of deprecated ephemeral: true
       await interaction.reply({ content: "⚠️ Something went wrong.", flags: 64 });
     }
   }

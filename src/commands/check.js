@@ -17,11 +17,37 @@ export async function execute(interaction) {
   try {
     const result = await llmCheckAndFix(code, lang);
 
-    await interaction.editReply(
-      `**Errors Found:**\n${result.errors || "No errors detected"}\n\n` +
-      `**Corrected Code:**\n\`\`\`${lang}\n${result.fixed_code || code}\n\`\`\`\n\n` +
-      `**Optimized Code:**\n\`\`\`${lang}\n${result.optimized_code || code}\n\`\`\``
-    );
+    await interaction.editReply({
+  content: "🎯 **Code Check Result**",
+  embeds: [
+    {
+      color: 0x5865F2,
+      title: "📝 Original",
+      description: `\`\`\`${lang}\n${code}\n\`\`\``
+    },
+    {
+      color: 0x57F287,
+      title: "✅ Errors",
+      description: result.errors || "No errors detected"
+    },
+    {
+      color: 0xFEE75C,
+      title: "🔧 Fixed Code",
+      description: `\`\`\`${lang}\n${result.fixed_code}\n\`\`\``
+    },
+    {
+      color: 0xF47FFF,
+      title: "⚡ Optimized Code",
+      description: `\`\`\`${lang}\n${result.optimized_code}\n\`\`\``
+    },
+    {
+      color: 0xED4245,
+      title: "📊 Stats",
+      description: `Original: ${code.length} chars\nFixed: ${result.fixed_code.length} chars\nOptimized: ${result.optimized_code.length} chars`
+    }
+  ]
+});
+
   } catch (e) {
     await interaction.editReply(`Sorry, I couldn't analyze the code: ${e.message}`);
   }

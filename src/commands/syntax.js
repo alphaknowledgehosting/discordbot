@@ -13,18 +13,43 @@ export async function execute(interaction) {
   const lang = interaction.options.getString("lang");
   const code = interaction.options.getString("code");
 
-  await interaction.deferReply({ flags: 64 }); // private reply
+  await interaction.deferReply({ flags: 64 }); // ephemeral reply
   try {
     const result = await llmSyntaxCheck(code, lang);
 
-    if (result.syntax_ok) {
-      await interaction.editReply("✅ No syntax errors detected!");
-    } else {
-      await interaction.editReply(
-        `❌ Syntax errors found:\n- ${result.errors.join("\n- ")}`
-      );
-    }
+    await interaction.editReply({
+      content: "🔍 **Syntax Check Result**",
+      embeds: [
+        {
+          color: 0x5865F2,
+          title: "📝 Original",
+          description: `\`\`\`${lang}\n${code}\n\`\`\``
+        },
+        {
+          color: result.syntax_ok ? 0x57F287 : 0xED4245,
+          title: result.syntax_ok
+            ? "✅ No Syntax Errors"
+            : "❌ Syntax Errors Found",
+          description: result.syntax_ok
+            ? "Your code is syntactically correct."
+            : result.errors.join("\n")
+        },
+        {
+          color: 0xFEE75C,
+          title: "📊 Stats",
+          description: `Original: ${code.length} chars`
+        }
+      ]
+    });
   } catch (e) {
-    await interaction.editReply(`Syntax check failed: ${e.message}`);
+    await interaction.editReply({
+      embeds: [
+        {
+          color: 0xED4245,
+          title: "⚠️ Syntax Check Failed",
+          description: e.message
+        }
+      ]
+    });
   }
 }
