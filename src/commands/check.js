@@ -17,12 +17,9 @@ export async function execute(interaction) {
   try {
     const result = await llmCheckAndFix(code, lang);
 
-    // 🔹 Split into multiple messages if too long
-    const parts = [];
+    let replyMsg = `🎯 **Code Check Result**\n\n`;
 
-    parts.push(`🎯 **Code Check Result**`);
-    parts.push(`📝 **Original Code:**\n\`\`\`${lang}\n${code}\n\`\`\``);
-
+    // ✅ Errors
     if (result.errors && result.errors.length > 0) {
       const errorsText = Array.isArray(result.errors)
         ? result.errors.map(e =>
@@ -30,27 +27,23 @@ export async function execute(interaction) {
           ).join("\n")
         : result.errors;
 
-      parts.push(`✅ **Errors Found:**\n${errorsText}`);
+      replyMsg += `✅ **Errors Found:**\n${errorsText}\n\n`;
     } else {
-      parts.push(`✅ **No errors detected.**`);
+      replyMsg += `✅ **No errors detected.**\n\n`;
     }
 
+    // 🔧 Fixed code
     if (result.fixed_code) {
-      parts.push(`🔧 **Fixed Code:**\n\`\`\`${lang}\n${result.fixed_code}\n\`\`\``);
+      replyMsg += `🔧 **Fixed Code:**\n\`\`\`${lang}\n${result.fixed_code}\n\`\`\`\n\n`;
     }
 
+    // ⚡ Optimized code
     if (result.optimized_code) {
-      parts.push(`⚡ **Optimized Code:**\n\`\`\`${lang}\n${result.optimized_code}\n\`\`\``);
+      replyMsg += `⚡ **Optimized Code:**\n\`\`\`${lang}\n${result.optimized_code}\n\`\`\`\n`;
     }
 
-    // Send all parts safely
-    for (let i = 0; i < parts.length; i++) {
-      if (i === 0) {
-        await interaction.editReply(parts[i]);
-      } else {
-        await interaction.followUp({ content: parts[i], flags: 64 });
-      }
-    }
+    // ✅ Send everything in one private message
+    await interaction.editReply(replyMsg);
 
   } catch (e) {
     await interaction.editReply(`⚠️ Sorry, I couldn't analyze the code: ${e.message}`);
