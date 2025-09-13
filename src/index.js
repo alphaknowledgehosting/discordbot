@@ -18,14 +18,13 @@ import * as Debug from "./commands/debug.js";
 
 import http from "http";
 
-// ✅ Create an HTTP server (to satisfy Render Web Service port checks)
+// ✅ HTTP server to satisfy Render's port check
 const PORT = process.env.PORT || 5173;
 const app = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
   res.end("AkiBot is alive!\n");
 });
 
-// ✅ Express-style listen log
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
@@ -33,7 +32,7 @@ app.listen(PORT, () => {
 // Slash commands to register
 const commands = [Help.data, Check.data, Debug.data];
 
-// Discord client
+// Create Discord client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -58,14 +57,14 @@ async function registerCommands() {
   }
 }
 
-// Bot ready event
+// When bot is ready
 client.once(Events.ClientReady, (c) => {
   console.log(`🤖 Logged in as ${c.user.tag}`);
   startContestWatcher(client);
   startYouTubeWatcher(client);
 });
 
-// Slash command handler
+// Handle slash commands
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -78,12 +77,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply("⚠️ Something went wrong while executing this command.");
     } else {
-      await interaction.reply({ content: "⚠️ Something went wrong.", flags: 64 }); // ephemeral
+      // Use flags instead of deprecated ephemeral: true
+      await interaction.reply({ content: "⚠️ Something went wrong.", flags: 64 });
     }
   }
 });
 
-// Moderation (auto-delete bad words)
+// Auto-delete bad words
 client.on(Events.MessageCreate, async (msg) => {
   try {
     if (!msg.guild || msg.author.bot || !msg.content) return;
