@@ -13,7 +13,7 @@ export async function execute(interaction) {
   const lang = interaction.options.getString("lang");
   const code = interaction.options.getString("code");
 
-  await interaction.deferReply({ flags: 64 }); // ephemeral reply
+  await interaction.deferReply({ flags: 64 }); // private reply
   try {
     const result = await llmSyntaxCheck(code, lang);
 

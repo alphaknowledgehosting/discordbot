@@ -3,12 +3,12 @@ import path from "path";
 
 export const data = {
   name: "company",
-  description: "Get question CSV files for a specific company",
+  description: "Get past question files for a company",
   options: [
     {
       name: "name",
-      type: 3, // STRING
-      description: "Company name (e.g., square, amazon, google)",
+      type: 3,
+      description: "Company name (e.g., square, amazon)",
       required: true
     }
   ]
@@ -16,37 +16,44 @@ export const data = {
 
 export async function execute(interaction) {
   const companyName = interaction.options.getString("name").toLowerCase();
+  const folderPath = path.resolve("data"); // your CSV storage folder
 
-  await interaction.deferReply({ flags: 64 }); // ✅ private reply only
-
+  // Find all files for that company
+  let files = [];
   try {
-    const folderPath = path.resolve("./data"); // put your CSVs in `data/` folder
-    const files = fs.readdirSync(folderPath);
-
-    // Match files by prefix before "_"
-    const companyFiles = files.filter(
-      (f) => f.toLowerCase().startsWith(companyName + "_") && f.endsWith(".csv")
-    );
-
-    if (companyFiles.length === 0) {
-      await interaction.editReply(`⚠️ No CSV files found for company **${companyName}**.`);
-      return;
-    }
-
-    // Reply with the file names as a list
-    let replyMessage = `📂 **Files for company: ${companyName}**\n\n`;
-    replyMessage += companyFiles.map((f) => `- ${f}`).join("\n");
-
-    await interaction.editReply(replyMessage);
-
-    // (Optional) If you want to attach the files:
-    // await interaction.editReply({
-    //   content: replyMessage,
-    //   files: companyFiles.map((f) => path.join(folderPath, f))
-    // });
-
+    files = fs.readdirSync(folderPath)
+      .filter(f => f.toLowerCase().startsWith(companyName) && f.endsWith(".csv"));
   } catch (err) {
-    console.error("Company command error:", err);
-    await interaction.editReply("⚠️ Failed to fetch company files.");
+    console.error(err);
+  }
+
+  if (files.length === 0) {
+    return interaction.reply({
+      content: `❌ No files found for **${companyName}**.`,
+      flags: 64 // ephemeral (only visible to user)
+    });
+  }
+
+  // Confirm privately in server
+  await interaction.reply({
+    content: `📩 I found ${files.length} file(s) for **${companyName}**. Check your DMs!`,
+    flags: 64
+  });
+
+  // Send files via DM
+  try {
+    for (const file of files) {
+      const filePath = path.join(folderPath, file);
+      await interaction.user.send({
+        content: `📄 File: **${file}**`,
+        files: [filePath]
+      });
+    }
+  } catch (err) {
+    console.error("DM error:", err);
+    await interaction.followUp({
+      content: "⚠️ Could not DM you. Please enable DMs from server members.",
+      flags: 64
+    });
   }
 }
