@@ -13,14 +13,9 @@ export async function execute(interaction) {
   const lang = interaction.options.getString("lang");
   const code = interaction.options.getString("code");
 
-  await interaction.deferReply({ flags: 64 }); // reply hidden to user only
+  await interaction.deferReply({ flags: 64 }); // private reply
   try {
     const result = await llmCheckAndFix(code, lang);
-
-    // ✅ ensure safe fallbacks
-    const errors = result?.errors || ["No errors detected."];
-    const fixedCode = result?.fixed_code || code;
-    const optimizedCode = result?.optimized_code || fixedCode;
 
     await interaction.editReply({
       content: "🎯 **Code Check Result**",
@@ -33,24 +28,24 @@ export async function execute(interaction) {
         {
           color: 0xED4245,
           title: "❌ Errors",
-          description: Array.isArray(errors)
-            ? errors.map(e => typeof e === "string" ? e : `Line ${e.line || "?"}: ${e.description || e.message}`).join("\n")
-            : errors.toString()
+          description: Array.isArray(result.errors)
+            ? result.errors.map(e => `Line ${e.line || "?"}: ${e.description}`).join("\n")
+            : result.errors
         },
         {
           color: 0x57F287,
           title: "🔧 Fixed Code",
-          description: `\`\`\`${lang}\n${fixedCode}\n\`\`\``
+          description: `\`\`\`${lang}\n${result.fixed_code}\n\`\`\``
         },
         {
           color: 0xF47FFF,
           title: "⚡ Optimized Code",
-          description: `\`\`\`${lang}\n${optimizedCode}\n\`\`\``
+          description: `\`\`\`${lang}\n${result.optimized_code}\n\`\`\``
         },
         {
           color: 0xFEE75C,
           title: "📊 Stats",
-          description: `Original: ${code.length} chars\nFixed: ${fixedCode.length} chars\nOptimized: ${optimizedCode.length} chars`
+          description: `Original: ${code.length} chars\nFixed: ${result.fixed_code.length} chars\nOptimized: ${result.optimized_code.length} chars`
         }
       ]
     });

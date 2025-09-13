@@ -51,16 +51,21 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-// Register slash commands with Discord API
+// Register slash commands with Discord API (guild-level for instant updates)
 async function registerCommands() {
   try {
     const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-    await rest.put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID), {
-      body: commands
-    });
+    // ✅ Use guild-level registration for instant updates
+    await rest.put(
+      Routes.applicationGuildCommands(
+        process.env.DISCORD_CLIENT_ID,
+        process.env.DISCORD_GUILD_ID // 👈 Add this to your .env file
+      ),
+      { body: commands }
+    );
 
-    console.log("✅ Slash commands registered.");
+    console.log("✅ Guild slash commands registered.");
   } catch (err) {
     console.error("❌ Failed to register commands:", err);
   }
@@ -84,7 +89,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       [Debug.data.name]: Debug,
       [Syntax.data.name]: Syntax,
       [Format.data.name]: Format,
-      [Company.data.name]: Company // ✅ Added company here
+      [Company.data.name]: Company
     };
 
     const command = cmdMap[interaction.commandName];
