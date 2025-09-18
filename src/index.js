@@ -11,7 +11,6 @@ import {
 import { shouldDelete } from "./services/moderation.js";
 import { startContestWatcher } from "./services/contests.js";
 import { startYouTubeWatcher } from "./services/youtube.js";
-import * as ListCompanies from "./commands/listcompanies.js";
 
 import * as Help from "./commands/help.js";
 import * as Check from "./commands/check.js";
@@ -19,10 +18,12 @@ import * as Debug from "./commands/debug.js";
 import * as Syntax from "./commands/syntax.js";
 import * as Format from "./commands/format.js";
 import * as Company from "./commands/company.js";
+import * as ListCompanies from "./commands/listcompanies.js";
 
 import http from "http";
+import https from "https";
 
-// ✅ Keep Render service alive
+// ✅ Start HTTP server for Render
 const PORT = process.env.PORT || 5173;
 const app = http.createServer((req, res) => {
   res.writeHead(200, { "Content-Type": "text/plain" });
@@ -32,6 +33,20 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
+// ✅ Keep service alive (self-ping every 14 minutes)
+const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+if (SELF_URL) {
+  setInterval(() => {
+    https
+      .get(SELF_URL, (res) => {
+        console.log(`🔄 Keep-alive ping: ${res.statusCode}`);
+      })
+      .on("error", (err) => {
+        console.error("Ping error:", err.message);
+      });
+  }, 840000); // 14 minutes
+}
+
 // ✅ Register all slash commands
 const commands = [
   Help.data,
@@ -39,7 +54,8 @@ const commands = [
   Debug.data,
   Syntax.data,
   Format.data,
-  Company.data,ListCompanies.data
+  Company.data,
+  ListCompanies.data
 ];
 
 // Create Discord client
@@ -57,11 +73,10 @@ async function registerCommands() {
   try {
     const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-    // ✅ Use guild-level registration for instant updates
     await rest.put(
       Routes.applicationGuildCommands(
         process.env.DISCORD_CLIENT_ID,
-        process.env.DISCORD_GUILD_ID // 👈 Add this to your .env file
+        process.env.DISCORD_GUILD_ID // 👈 must be in your .env
       ),
       { body: commands }
     );
@@ -95,8 +110,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     };
 
     const command = cmdMap[interaction.commandName];
-    if (command) return command.execute(interaction);
-
+    if (command) {
+      return command.execute(interaction);
+    }
   } catch (err) {
     console.error("Command error:", err);
     if (interaction.deferred || interaction.replied) {
